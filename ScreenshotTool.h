@@ -25,7 +25,6 @@
 #include <windows.h>
 #endif
 
-// Add these forward declarations at the top of the file, after the includes
 class QCheckBox;
 class QVBoxLayout;
 class QDialogButtonBox;
@@ -33,24 +32,26 @@ class QDialogButtonBox;
 // Native event filter for global hotkeys
 class GlobalHotkeyFilter : public QAbstractNativeEventFilter
 {
+    QObject* m_target;
+    const char* m_slot;
+
 public:
     GlobalHotkeyFilter(QObject* target, const char* slot);
     ~GlobalHotkeyFilter();
-    
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override;
-    #else
+#else
     bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override;
-    #endif
-    
+#endif
+
 private:
-    QObject* m_target;
-    const char* m_slot;
-    
 #ifdef Q_OS_WIN
-    bool registerHotKey();
-    bool unregisterHotKey();
-    static const int HOTKEY_ID = 1;
+    bool registerHotKeys();
+    bool unregisterHotKeys();
+    static const int HOTKEY_ID_PRINT = 1;
+    static const int HOTKEY_ID_CTRL_PRINT = 2;
+    static const int HOTKEY_ID_SHIFT_PRINT = 3;
 #endif
 };
 
@@ -58,14 +59,14 @@ private:
 class PreviewWindow : public QLabel
 {
     Q_OBJECT
-    
+
 public:
     PreviewWindow(QWidget *parent = nullptr);
-    
+
 signals:
     void saveRequested();
     void copyToClipboardRequested();
-    
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 };
@@ -80,6 +81,8 @@ public:
 
 public slots:
     void startCapture();
+    void startCaptureAndSave();
+    void startCaptureAndPreview();
     void saveScreenshot();
     void showCapturedImage();
     void copyToClipboard();
@@ -111,7 +114,15 @@ private:
     GlobalHotkeyFilter* hotkeyFilter;
     bool autoStartEnabled;
     QTimer* cursorTracker;
-    
+
+    // Capture modes
+    enum CaptureMode {
+        ClipboardOnly,
+        ClipboardAndSave,
+        ClipboardAndPreview
+    };
+    CaptureMode currentCaptureMode;
+
     void captureFullScreen();
     QString generateFileName();
     void drawZoomArea(QPainter& painter);
@@ -123,6 +134,8 @@ private:
     bool isAutoStartEnabled() const;
     QString getApplicationPath() const;
     void updateCursorPosition();
+    void handleCaptureCompletion();
+    void performCapture();
 };
 
 #endif // SCREENSHOTTOOL_H
