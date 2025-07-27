@@ -11,6 +11,12 @@
 *.dylib
 build/*
 # Qt-es
+
+build/*
+installer/*
+release/*
+debug/*
+
 object_script.*.Release
 object_script.*.Debug
 *_plugin_import.cpp
